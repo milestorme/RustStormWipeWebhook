@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("RustStormWipeWebhook", "Milestorme", "1.3.3")]
+    [Info("RustStormWipeWebhook", "Milestorme", "1.3.4")]
     [Description("Detects fresh map wipes automatically and posts a premium RustStorm Discord webhook update with the next wipe countdown.")]
     public class RustStormWipeWebhook : RustPlugin
     {
@@ -323,17 +323,46 @@ namespace Oxide.Plugins
             return wipeTime.Day <= 7 && wipeTime.DayOfWeek == DayOfWeek.Friday;
         }
 
+        private DateTimeOffset GetCurrentWipeLocal()
+        {
+            var offset = TimeSpan.FromHours(config.TimezoneOffsetHours);
+            var nowLocal = DateTimeOffset.UtcNow.ToOffset(offset);
+
+            DayOfWeek wipeDay;
+            if (!Enum.TryParse(config.WipeDay, true, out wipeDay))
+                wipeDay = DayOfWeek.Friday;
+
+            int daysSince = ((int)nowLocal.DayOfWeek - (int)wipeDay + 7) % 7;
+
+            var current = new DateTimeOffset(
+                nowLocal.Year,
+                nowLocal.Month,
+                nowLocal.Day,
+                config.WipeHour24,
+                config.WipeMinute,
+                0,
+                offset
+            ).AddDays(-daysSince);
+
+            if (daysSince == 0 && nowLocal < current)
+                current = current.AddDays(-7);
+
+            return current;
+        }
+
         private DiscordEmbed BuildEmbed(string reason, long unix, bool isTest)
         {
             string headline = isTest ? "🧪 Test message" : "🌩 Fresh map wipe detected";
             string schedule = $"{config.WipeDay} • {config.WipeHour24:00}:{config.WipeMinute:00} {config.TimezoneLabel}";
             string nextWipeCompact = $"<t:{unix}:R>";
             string nextWipeFull = $"<t:{unix}:F>";
-            string wipeType = isTest ? "Test Trigger" : (IsForceWipe(GetNextWipeLocal()) ? "Force Wipe (Facepunch)" : "Weekly Wipe");
+            var currentWipe = GetCurrentWipeLocal();
+            string wipeType = isTest ? "Test Trigger" : (IsForceWipe(currentWipe) ? "Force Wipe (Facepunch)" : "Weekly Wipe");
+            string embedTitle = isTest ? "🧪 RustStorm Wipe Test" : (IsForceWipe(currentWipe) ? "🔥 RustStorm Force Wipe" : "🔥 RustStorm Weekly Wipe");
 
             return new DiscordEmbed
             {
-                title = isTest ? "🧪 RustStorm Wipe Test" : (IsForceWipe(GetNextWipeLocal()) ? "🔥 RustStorm Force Wipe" : "🔥 RustStorm Weekly Wipe"),
+                title = embedTitle,
                 description =
                     $"**{config.ServerName}** | {config.ServerDescription}\n\n" +
                     $"{headline}\n" +
