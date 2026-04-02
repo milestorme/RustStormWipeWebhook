@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("RustStormWipeWebhook", "OpenAI", "1.3.2")]
+    [Info("RustStormWipeWebhook", "Milestorme", "1.3.3")]
     [Description("Detects fresh map wipes automatically and posts a premium RustStorm Discord webhook update with the next wipe countdown.")]
     public class RustStormWipeWebhook : RustPlugin
     {
@@ -26,10 +26,7 @@ namespace Oxide.Plugins
             [JsonProperty("Server Description")]
             public string ServerDescription = "5x | Solo/Duo/Trio | Weekly";
 
-            [JsonProperty("Discord Invite URL")]
-            public string DiscordInviteUrl = "https://discord.gg/KvsxMpQskd";
-
-            [JsonProperty("Post Once On Server Initialization")]
+                        [JsonProperty("Post Once On Server Initialization")]
             public bool PostOnceOnServerInitialization = true;
 
             [JsonProperty("Wipe Day")]
@@ -175,10 +172,7 @@ namespace Oxide.Plugins
             if (string.IsNullOrWhiteSpace(config.ServerDescription))
                 config.ServerDescription = "5x | Solo/Duo/Trio | Weekly";
 
-            if (string.IsNullOrWhiteSpace(config.DiscordInviteUrl))
-                config.DiscordInviteUrl = "https://discord.gg/KvsxMpQskd";
-
-            if (string.IsNullOrWhiteSpace(config.WipeDay))
+                        if (string.IsNullOrWhiteSpace(config.WipeDay))
                 config.WipeDay = "Friday";
 
             if (string.IsNullOrWhiteSpace(config.TimezoneLabel))
