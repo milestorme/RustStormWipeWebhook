@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("RustStormWipeWebhook", "Milestorme", "1.3.4")]
+    [Info("RustStormWipeWebhook", "Milestorme", "1.3.5")]
     [Description("Detects fresh map wipes automatically and posts a premium RustStorm Discord webhook update with the next wipe countdown.")]
     public class RustStormWipeWebhook : RustPlugin
     {
@@ -26,7 +26,7 @@ namespace Oxide.Plugins
             [JsonProperty("Server Description")]
             public string ServerDescription = "5x | Solo/Duo/Trio | Weekly";
 
-                        [JsonProperty("Post Once On Server Initialization")]
+            [JsonProperty("Post Once On Server Initialization")]
             public bool PostOnceOnServerInitialization = true;
 
             [JsonProperty("Wipe Day")]
@@ -49,6 +49,9 @@ namespace Oxide.Plugins
 
             [JsonProperty("Discord Message Settings")]
             public MessageSettings Message = new MessageSettings();
+
+            [JsonProperty("Map Info Settings")]
+            public MapInfoSettings MapInfo = new MapInfoSettings();
         }
 
         private class BrandingSettings
@@ -85,6 +88,18 @@ namespace Oxide.Plugins
 
             [JsonProperty("Show @everyone On Test Messages")]
             public bool ShowEveryoneOnTestMessages = false;
+        }
+
+        private class MapInfoSettings
+        {
+            [JsonProperty("Include Map Size And Seed")]
+            public bool IncludeMapSizeAndSeed = true;
+
+            [JsonProperty("Include RustMaps Link")]
+            public bool IncludeRustMapsLink = true;
+
+            [JsonProperty("RustMaps Base URL")]
+            public string RustMapsBaseUrl = "https://rustmaps.com/map";
         }
 
         private class StoredData
@@ -163,6 +178,9 @@ namespace Oxide.Plugins
             if (config.Message == null)
                 config.Message = new MessageSettings();
 
+            if (config.MapInfo == null)
+                config.MapInfo = new MapInfoSettings();
+
             config.WipeHour24 = Mathf.Clamp(config.WipeHour24, 0, 23);
             config.WipeMinute = Mathf.Clamp(config.WipeMinute, 0, 59);
 
@@ -172,7 +190,7 @@ namespace Oxide.Plugins
             if (string.IsNullOrWhiteSpace(config.ServerDescription))
                 config.ServerDescription = "5x | Solo/Duo/Trio | Weekly";
 
-                        if (string.IsNullOrWhiteSpace(config.WipeDay))
+            if (string.IsNullOrWhiteSpace(config.WipeDay))
                 config.WipeDay = "Friday";
 
             if (string.IsNullOrWhiteSpace(config.TimezoneLabel))
@@ -189,6 +207,9 @@ namespace Oxide.Plugins
 
             if (config.Branding.EmbedColorDecimal <= 0)
                 config.Branding.EmbedColorDecimal = 15882260;
+
+            if (string.IsNullOrWhiteSpace(config.MapInfo.RustMapsBaseUrl))
+                config.MapInfo.RustMapsBaseUrl = "https://rustmaps.com/map";
         }
 
         private void LoadData()
@@ -317,7 +338,6 @@ namespace Oxide.Plugins
             return string.Join(" ", parts.ToArray());
         }
 
-
         private bool IsForceWipe(DateTimeOffset wipeTime)
         {
             return wipeTime.Day <= 7 && wipeTime.DayOfWeek == DayOfWeek.Friday;
@@ -359,6 +379,7 @@ namespace Oxide.Plugins
             var currentWipe = GetCurrentWipeLocal();
             string wipeType = isTest ? "Test Trigger" : (IsForceWipe(currentWipe) ? "Force Wipe (Facepunch)" : "Weekly Wipe");
             string embedTitle = isTest ? "🧪 RustStorm Wipe Test" : (IsForceWipe(currentWipe) ? "🔥 RustStorm Force Wipe" : "🔥 RustStorm Weekly Wipe");
+            string mapInfoBlock = BuildMapInfoBlock();
 
             return new DiscordEmbed
             {
@@ -368,7 +389,8 @@ namespace Oxide.Plugins
                     $"{headline}\n" +
                     $"⏱ **Next Wipe:** {nextWipeCompact}\n" +
                     $"📅 **Wipe Time:** {nextWipeFull}\n\n" +
-                    $"⚡ Fresh start. No delays. No surprises.",
+                    $"⚡ Fresh start. No delays. No surprises." +
+                    mapInfoBlock,
                 color = config.Branding.EmbedColorDecimal,
                 fields = new List<DiscordField>
                 {
@@ -395,6 +417,44 @@ namespace Oxide.Plugins
                 image = string.IsNullOrWhiteSpace(config.Branding.BannerImageUrl) ? null : new DiscordImage { url = config.Branding.BannerImageUrl },
                 thumbnail = string.IsNullOrWhiteSpace(config.Branding.ThumbnailImageUrl) ? null : new DiscordThumbnail { url = config.Branding.ThumbnailImageUrl }
             };
+        }
+
+        private string BuildMapInfoBlock()
+        {
+            if ((!config.MapInfo.IncludeMapSizeAndSeed && !config.MapInfo.IncludeRustMapsLink) || World.Seed <= 0 || World.Size <= 0)
+                return string.Empty;
+
+            string size = World.Size.ToString();
+            string seed = World.Seed.ToString();
+
+            var lines = new List<string>();
+
+            if (config.MapInfo.IncludeMapSizeAndSeed)
+            {
+                lines.Add($"🗺 **Map Size:** {size}");
+                lines.Add($"🌱 **Map Seed:** {seed}");
+            }
+
+            if (config.MapInfo.IncludeRustMapsLink)
+            {
+                string url = BuildRustMapsUrl(size, seed);
+                if (!string.IsNullOrWhiteSpace(url))
+                    lines.Add($"🔗 **Map:** {url}");
+            }
+
+            if (lines.Count == 0)
+                return string.Empty;
+
+            return "\n\n" + string.Join("\n", lines.ToArray());
+        }
+
+        private string BuildRustMapsUrl(string size, string seed)
+        {
+            if (string.IsNullOrWhiteSpace(size) || string.IsNullOrWhiteSpace(seed))
+                return string.Empty;
+
+            string baseUrl = (config.MapInfo.RustMapsBaseUrl ?? "https://rustmaps.com/map").Trim().TrimEnd('/');
+            return $"{baseUrl}/{size}_{seed}";
         }
 
         private DateTimeOffset GetNextWipeLocal()
