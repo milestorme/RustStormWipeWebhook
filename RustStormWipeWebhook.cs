@@ -6,8 +6,8 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("RustStormWipeWebhook", "Milestorme", "1.3.5")]
-    [Description("Detects fresh map wipes automatically and posts a premium RustStorm Discord webhook update with the next wipe countdown.")]
+    [Info("RustStorm Wipe Webhook", "Milestorme", "1.3.6")]
+    [Description("Detects fresh map wipes automatically and posts a premium Discord wipe update with the next wipe countdown.")]
     public class RustStormWipeWebhook : RustPlugin
     {
         private Configuration config;
@@ -108,6 +108,17 @@ namespace Oxide.Plugins
             public string LastNextWipeIso = "";
         }
 
+        protected override void LoadDefaultMessages()
+        {
+            lang.RegisterMessages(new Dictionary<string, string>
+            {
+                ["NoPermission"] = "You do not have permission to use this command.",
+                ["TestSent"] = "RustStorm Wipe Webhook test sent.",
+                ["FreshWipeDetected"] = "Fresh map wipe detected and webhook sent.",
+                ["NoFreshWipeDetected"] = "No new map wipe detected. The current map was already announced."
+            }, this);
+        }
+
         protected override void LoadDefaultConfig()
         {
             config = new Configuration();
@@ -152,19 +163,49 @@ namespace Oxide.Plugins
         [ConsoleCommand("wipewebhook.test")]
         private void WipeWebhookTest(ConsoleSystem.Arg arg)
         {
-            if (!arg.IsAdmin) return;
+            if (!HasCommandAccess(arg))
+            {
+                Reply(arg, "NoPermission");
+                return;
+            }
+
             SendWebhook("manual test", true);
-            SendReply(arg, "RustStormWipeWebhook test sent.");
+            Reply(arg, "TestSent");
         }
 
         [ConsoleCommand("wipewebhook.check")]
         private void WipeWebhookCheck(ConsoleSystem.Arg arg)
         {
-            if (!arg.IsAdmin) return;
+            if (!HasCommandAccess(arg))
+            {
+                Reply(arg, "NoPermission");
+                return;
+            }
+
             bool sent = TryAnnounceFreshWipe("manual check");
-            SendReply(arg, sent
-                ? "Fresh map wipe detected and webhook sent."
-                : "No new map wipe detected. Current map was already announced.");
+            Reply(arg, sent ? "FreshWipeDetected" : "NoFreshWipeDetected");
+        }
+
+        private bool HasCommandAccess(ConsoleSystem.Arg arg)
+        {
+            if (arg == null)
+                return false;
+
+            if (arg.Connection == null)
+                return true;
+
+            return arg.IsAdmin;
+        }
+
+        private void Reply(ConsoleSystem.Arg arg, string messageKey)
+        {
+            SendReply(arg, GetMessage(messageKey, arg));
+        }
+
+        private string GetMessage(string messageKey, ConsoleSystem.Arg arg = null)
+        {
+            string userId = arg?.Connection?.userid.ToString() ?? null;
+            return lang.GetMessage(messageKey, this, userId);
         }
 
         private void SanitizeConfig()
