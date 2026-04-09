@@ -480,7 +480,7 @@ namespace Oxide.Plugins
             {
                 string url = BuildRustMapsUrl(size, seed);
                 if (!string.IsNullOrWhiteSpace(url))
-                    lines.Add(url);
+                    lines.Add($"🔗 **Map:** {url}");
             }
 
             if (lines.Count == 0)
