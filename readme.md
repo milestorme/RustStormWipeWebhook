@@ -1,196 +1,251 @@
-# 🌩 RustStorm Wipe Webhook
+# RustStorm Wipe Webhook
 
-A premium Oxide plugin that automatically detects Rust map wipes and posts a clean, branded Discord webhook announcement with a live countdown.
+A premium-style Rust plugin for automated Discord wipe announcements, RustMaps-powered map voting, and next-wipe community map selection.
 
----
-
-## 🔥 Features
-
-* ✅ **Automatic wipe detection**
-
-  * Detects new maps using `World.Url` (primary) or fallback identity
-  * No manual input required
-
-* ⏱ **Live Discord countdown**
-
-  * Uses Discord timestamps (`<t:...>`)
-  * Shows both relative and exact wipe time
-
-* 🧠 **Force vs Weekly wipe detection**
-
-  * First Friday of the month → **Force Wipe (Facepunch)**
-  * All other Fridays → **Weekly Wipe**
-
-* 🎨 **Fully branded embed**
-
-  * Banner image
-  * Thumbnail
-  * Custom webhook avatar
-  * RustStorm color styling
-
-* 🧼 **Clean, minimal layout**
-
-  * No clutter (no debug info, no filler sections)
-  * Focused on key info only
-
-* 🔁 **Posts once per wipe**
-
-  * Prevents duplicate spam on server restarts
-
-* 📣 **Optional @everyone ping**
+Built for Oxide/uMod Rust servers.
 
 ---
 
-## ⚙️ Installation
+# Features
 
-1. Drop the plugin into your server:
+## Automated Wipe Detection
 
+* Detects fresh procedural map wipes automatically
+* Posts premium Discord wipe announcements
+* Supports weekly and force wipe schedules
+* Countdown timers using Discord timestamps
+
+## RustMaps Integration
+
+* Automatic RustMaps procedural map generation
+* RustMaps API support
+* Configurable map generation timeout
+* Automatic polling while maps generate
+* Supports generated map previews and images
+
+## Discord Map Voting
+
+* Automatic post-wipe map voting
+* Reaction-based Discord voting
+* Auto-generated map options
+* Configurable map size and seed ranges
+* Automatic winner detection
+* Winner announcements with RustMaps previews
+
+## RustMaps Image Support
+
+Configurable RustMaps image types:
+
+* auto
+* icons
+* preview
+* thumbnail
+* raw
+
+## Persistent Vote Tracking
+
+* Survives server restarts
+* Resumes active votes automatically
+* Stores winning map data
+* Prevents duplicate vote generation
+
+---
+
+# Requirements
+
+* Rust Dedicated Server
+* Oxide/uMod
+* Discord Bot Token
+* Discord Webhook
+* RustMaps API Key
+
+---
+
+# Installation
+
+1. Upload `RustStormWipeWebhook.cs` to:
+
+```text
+oxide/plugins/
 ```
-/oxide/plugins/RustStormWipeWebhook.cs
-```
 
-2. Start or reload server:
+2. Start or reload the plugin:
 
-```
+```text
 oxide.reload RustStormWipeWebhook
 ```
 
-3. Edit config file:
+3. Configure:
 
-```
-/oxide/config/RustStormWipeWebhook.json
-```
-
----
-
-## 🔧 Configuration
-
-### Required
-
-```json
-"Discord Webhook URL": "https://discord.com/api/webhooks/..."
+```text
+oxide/config/RustStormWipeWebhook.json
 ```
 
 ---
 
-### Branding
+# Discord Bot Permissions
+
+Required permissions:
+
+* View Channels
+* Send Messages
+* Embed Links
+* Add Reactions
+* Read Message History
+
+---
+
+# Commands
+
+## Wipe Commands
+
+```text
+wipewebhook.test
+```
+
+Posts a test wipe announcement.
+
+```text
+wipewebhook.check
+```
+
+Checks for a fresh wipe manually.
+
+---
+
+## Map Vote Commands
+
+```text
+wipewebhook.mapvote.start
+```
+
+Starts a map vote manually.
+
+```text
+wipewebhook.mapvote.status
+```
+
+Shows active vote information.
+
+```text
+wipewebhook.mapvote.end
+```
+
+Ends the active vote and announces the winner.
+
+---
+
+# RustMaps API Setup
+
+Get your API key from:
+
+https://rustmaps.com/docs
+
+Add it to config:
 
 ```json
-"Branding": {
-  "Banner Image URL": "https://your-banner.png",
-  "Thumbnail Image URL": "https://your-thumbnail.png",
-  "Embed Color Decimal": 15882260
+"RustMaps API Settings": {
+  "Use RustMaps API Generation Before Posting Vote": true,
+  "API Key": "YOUR_API_KEY"
 }
 ```
 
 ---
 
-### Webhook Identity
+# Recommended Settings
 
 ```json
-"Username Override": "RustStorm Wipe Bot",
-"Avatar URL": "https://your-logo.png"
+"Vote Duration Minutes": 4320,
+"Map Generation Timeout Seconds": 3600,
+"Map Generation Poll Interval Seconds": 60,
+"Preferred RustMaps Image Type (auto, icons, preview, thumbnail, raw)": "icons"
 ```
 
 ---
 
-### Wipe Schedule
+# Example Features In Action
+
+## Automatic Flow
+
+```text
+Fresh wipe detected
+↓
+Discord wipe announcement
+↓
+Automatic map vote starts
+↓
+RustMaps generates maps
+↓
+Players vote in Discord
+↓
+Winner selected automatically
+↓
+Winner announcement posted
+```
+
+---
+
+# Configuration Highlights
+
+## Automatic Vote Generation
 
 ```json
-"Wipe Day": "Friday",
-"Wipe Hour 24": 3,
-"Wipe Minute": 0,
-"Timezone Label": "GMT+8",
-"Timezone Offset Hours": 8
+"Automatically Start New Vote After Fresh Wipe": true
 ```
 
----
-
-### Behavior
+## Auto Generated Maps
 
 ```json
-"Post Once On Server Initialization": true,
-"Show @everyone On Real Wipes": true,
-"Show @everyone On Test Messages": false
+"Auto Generate Map Options On Vote Start": true
+```
+
+## Map Size
+
+```json
+"Auto Generated Map Size": 4000
+```
+
+## RustMaps Image Style
+
+```json
+"Preferred RustMaps Image Type (auto, icons, preview, thumbnail, raw)": "icons"
 ```
 
 ---
 
-## 🧪 Commands
+# Performance
 
-### Test webhook
+Designed to have very low runtime overhead.
 
-```
-wipewebhook.test
-```
+The plugin remains mostly idle outside of:
 
-### Force wipe check
+* wipe detection
+* Discord requests
+* RustMaps generation polling
 
-```
-wipewebhook.check
+Recommended polling interval:
+
+```json
+"Map Generation Poll Interval Seconds": 60
 ```
 
 ---
 
-## 📩 Example Output
+# Notes
 
-**Title:**
-
-```
-🔥 RustStorm Force Wipe
-```
-
-**Content:**
-
-* Server name + type
-* Next wipe countdown (live)
-* Exact wipe time
-* Wipe type (Force / Weekly)
-* Schedule
-* Banner image
+* RustMaps generation can take time depending on map size and RustMaps queue load
+* The plugin supports long generation waits (up to 2 hours configurable)
+* Shockbyte-compatible
+* Supports procedural Rust maps
 
 ---
 
-## 🧠 How It Works
+# Credits
 
-* Tracks current map using:
+Created by Milestorme
 
-  * `World.Url` (preferred)
-  * fallback: seed + size internally
-* Stores last announced map in:
+Powered by:
 
-```
-/oxide/data/RustStormWipeWebhook.json
-```
-
-* Only posts when a **new map is detected**
-
----
-
-## 🚀 Notes
-
-* No seed/technical info is shown to players (clean UX)
-* Designed for **Discord-first servers**
-* Safe across restarts and reloads
-
----
-
-## 🔥 Recommended Setup
-
-* Use a **square logo (256x256)** for Avatar
-* Use your **banner (wide)** for embed image
-* Keep embed clean — less is more
-
----
-
-## 💡 Future Ideas
-
-* Role ping instead of @everyone
-* Different embed color for force wipe
-* Auto “JUST WIPED — JOIN NOW” message
-
----
-
-## 🌩 RustStorm
-
-> Fresh wipe. No delays. No surprises.
+* RustMaps
+* Discord
+* Oxide/uMod
